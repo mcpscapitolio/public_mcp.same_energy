@@ -58,6 +58,9 @@ faz pesquisas, uploads ou downloads.
 | Ferramenta | Uso |
 |---|---|
 | `same_energy_help` | Orientação assistida e exemplos |
+| `same_energy_check_updates` | Consultar se há versão nova no GitHub |
+| `same_energy_prepare_update` | Preparar a instalação após concordância explícita |
+| `same_energy_update_notes` | Ver mudanças da versão disponível ou da última instalada |
 | `same_energy_status` | Conferir site, navegador e pasta acessível |
 | `same_energy_search_by_text` | Buscar por descrição |
 | `same_energy_search_by_image` | Buscar por semelhança, enviando a foto ao site |
@@ -85,6 +88,24 @@ A instalação usa projeto, imagem e volume próprios, sem publicar portas de re
 O projeto usa a interface pública do site e pode precisar de ajustes se ela mudar.
 Não é afiliado ao Same Energy. A licença MIT cobre o código; as imagens têm suas
 próprias origens e licenças. Veja [LICENSE](LICENSE).
+
+## Atualizações com orientação do agente
+
+Ao iniciar uma conexão MCP, o servidor consulta o GitHub público. Se houver uma
+versão mais recente, o agente deve dizer: **“Tem atualização, posso instalar?”**
+A consulta não instala nada. A recusa mantém o uso normal da versão atual.
+
+Depois da concordância, o agente prepara um plano vinculado ao commit apresentado
+e executa o atualizador no terminal do host. A nova versão é testada antes de
+alterar o checkout; mudanças locais impedem a atualização para evitar sobrescrita.
+O `.env` e as preferências Docker são preservados. O servidor não recebe acesso
+ao socket Docker nem instala atualizações por conta própria.
+
+Pergunte **“O que mudou na última atualização?”** para consultar as notas salvas.
+Antes de instalar, também é possível perguntar **“O que muda nessa atualização?”**.
+Veja [CHANGELOG.md](CHANGELOG.md) e o [guia de atualização](AJUDA_INSTALACAO.md#atualizações-assistidas).
+Se o GitHub não responder, a versão instalada continua funcionando e a checagem
+pode ser repetida com `same_energy_check_updates`.
 
 ```sh
 docker build --target test -t same-energy-public-mcp:test .

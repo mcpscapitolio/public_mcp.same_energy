@@ -200,7 +200,7 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
     async def test_tool_schema_and_annotations(self):
         from same_energy_mcp.server import mcp
         tools = {t.name: t for t in await mcp.list_tools()}
-        self.assertEqual(len(tools), 7)
+        self.assertEqual(len(tools), 10)
         self.assertFalse(tools["same_energy_search_by_image"].annotations.readOnlyHint)
         self.assertFalse(tools["same_energy_save_image"].annotations.destructiveHint)
         limit = tools["same_energy_get_gallery"].inputSchema["properties"]["limit"]

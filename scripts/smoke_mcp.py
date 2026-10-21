@@ -15,11 +15,12 @@ from mcp.client.stdio import stdio_client
 async def run(args):
     report = {"tools": [], "checks": {}}
     Path(args.output).mkdir(parents=True, exist_ok=True)
-    env = {k: os.environ[k] for k in ("PYTHONPATH", "PLAYWRIGHT_BROWSERS_PATH", "SAME_ENERGY_WORKSPACE", "SAME_ENERGY_HOST_WORKSPACE", "SAME_ENERGY_PREFERENCES_FILE") if k in os.environ}
+    env = {k: os.environ[k] for k in ("PYTHONPATH", "PLAYWRIGHT_BROWSERS_PATH", "SAME_ENERGY_WORKSPACE", "SAME_ENERGY_HOST_WORKSPACE", "SAME_ENERGY_PREFERENCES_FILE", "SAME_ENERGY_INSTALL_DIRECTORY") if k in os.environ}
     params = StdioServerParameters(command=sys.executable, args=["-m", "same_energy_mcp.server"], env=env)
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write, read_timeout_seconds=timedelta(seconds=180)) as session:
-            await session.initialize()
+            initialized = await session.initialize()
+            assert "CONSULTA INICIAL GITHUB" in initialized.instructions
             report["tools"] = [t.name for t in (await session.list_tools()).tools]
 
             async def call(name, arguments):
@@ -40,6 +41,10 @@ async def run(args):
 
             help_result = await call("same_energy_help", {})
             assert "Como funciona o MCP SAME-ENERGY?" in help_result["guide"]
+            await call("same_energy_check_updates", {})
+            await call("same_energy_update_notes", {})
+            plan = await call("same_energy_prepare_update", {})
+            assert not plan["ready_to_install"] and "command" not in plan
             await call("same_energy_status", {})
             text_search = await call("same_energy_search_by_text", {"query": "cinematic rainy street at night", "limit": 6})
             await call("same_energy_get_gallery", {"gallery_url": text_search["gallery_url"], "limit": 8})

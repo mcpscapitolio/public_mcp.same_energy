@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "same-energy-mcp"
-version = "0.3.0"
+dynamic = ["version"]
 description = "Same Energy visual search and verified image downloads over MCP"
 license = "MIT"
 readme = "README.md"
@@ -22,4 +22,7 @@ Documentation = "https://github.com/mcpscapitolio/public_mcp.same_energy/blob/ma
 where = ["src"]
 
 [tool.setuptools.package-data]
-same_energy_mcp = ["preferences.json", "help.md"]
+same_energy_mcp = ["preferences.json", "help.md", "release.json"]
+
+[tool.setuptools.dynamic]
+version = {attr = "same_energy_mcp.__version__"}

@@ -3,6 +3,7 @@ set -euo pipefail
 repo_dir="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 workspace_dir=''
 client=''
+escaped_apostrophe="\\'"
 usage() { echo 'Uso: bash scripts/install.sh --workspace /pasta/absoluta [--client codex|claude-code|antigravity]'; }
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -24,12 +25,11 @@ command -v docker >/dev/null || { echo 'Instale e inicie o Docker com Compose.' 
 docker_bin="$(command -v docker)"
 "$docker_bin" compose version >/dev/null
 "$docker_bin" info >/dev/null
-unset SAME_ENERGY_WORKSPACE_DIR
+unset SAME_ENERGY_WORKSPACE_DIR SAME_ENERGY_INSTALL_DIRECTORY
 umask 077
 if [ -n "$workspace_dir" ]; then
   mkdir -p -- "$workspace_dir"
   workspace_dir="$(CDPATH= cd -- "$workspace_dir" && pwd -P)"
-  escaped_apostrophe="\\'"
   escaped_workspace="${workspace_dir//\'/$escaped_apostrophe}"
   env_line="SAME_ENERGY_WORKSPACE_DIR='$escaped_workspace'"
   if [ -e "$repo_dir/.env" ]; then
@@ -40,6 +40,10 @@ if [ -n "$workspace_dir" ]; then
   else
     printf '%s\n' "$env_line" > "$repo_dir/.env"
   fi
+fi
+if ! grep -q '^SAME_ENERGY_INSTALL_DIRECTORY=' "$repo_dir/.env"; then
+  escaped_install="${repo_dir//\'/$escaped_apostrophe}"
+  printf '\n%s\n' "SAME_ENERGY_INSTALL_DIRECTORY='$escaped_install'" >> "$repo_dir/.env"
 fi
 compose() { "$docker_bin" compose --project-directory "$repo_dir" --env-file "$repo_dir/.env" "$@"; }
 compose config --quiet

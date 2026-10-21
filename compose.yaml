@@ -11,6 +11,7 @@ services:
       SAME_ENERGY_WORKSPACE: /workspace
       SAME_ENERGY_HOST_WORKSPACE: ${SAME_ENERGY_WORKSPACE_DIR:?Preencha SAME_ENERGY_WORKSPACE_DIR no .env}
       SAME_ENERGY_PREFERENCES_FILE: /data/preferences.json
+      SAME_ENERGY_INSTALL_DIRECTORY: ${SAME_ENERGY_INSTALL_DIRECTORY:-}
     volumes:
       - type: bind
         source: ${SAME_ENERGY_WORKSPACE_DIR:?Preencha SAME_ENERGY_WORKSPACE_DIR no .env}

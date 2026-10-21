@@ -24,3 +24,9 @@
 - Instalação pública usa projeto, imagem e volume próprios; preservar outras instalações.
 - Ler `AJUDA_INSTALACAO.md` antes de instalar; mesclar a entrada do cliente sem substituir a configuração inteira.
 - Quando perguntarem como funciona o MCP SAME-ENERGY, usar same_energy_help e a orientação de help.md; não iniciar pesquisa durante a explicação.
+- Consultar o GitHub na conexão inicial. Se houver novidade, dizer exatamente: "Tem atualização, posso instalar?".
+- Aguardar concordância explícita para a versão apresentada; silêncio, pedido de busca ou aprovação de outra versão não valem como consentimento.
+- Depois da concordância, preparar o plano com o commit apresentado e executá-lo no terminal do host; não montar o socket Docker no servidor.
+- Testar a candidata antes de alterar o checkout e preservar mudanças locais, .env e volumes. Não anunciar sucesso após uma falha.
+- Disponibilizar notas da versão oferecida e da última instalação concluída; manter `/data/last_update.json` persistente.
+- Incrementar `__version__` e `release.json` juntos e atualizar CHANGELOG.md em cada nova versão pública.

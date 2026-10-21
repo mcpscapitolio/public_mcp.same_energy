@@ -4,6 +4,13 @@ Ele conecta seu agente ao Same Energy para encontrar referências visuais reais 
 descrição ou semelhança com uma fotografia. As buscas usam o site público; não é
 preciso criar conta nem fornecer token. O MCP não gera imagens.
 
+No início da conexão, também há uma consulta ao GitHub. Se houver versão nova,
+o agente pergunta **“Tem atualização, posso instalar?”** e só instala depois da
+concordância explícita. Se esse aviso estiver pendente, priorize essa pergunta;
+depois da resposta, retome a orientação de uso sem juntar várias perguntas.
+Pergunte **“O que mudou na última atualização?”** para consultar as notas instaladas,
+ou **“O que muda nessa atualização?”** para ver as notas antes de aceitar.
+
 ## Ajuda assistida para o agente
 
 Ao receber “como funciona o mcp SAME-ENERGY?” ou uma pergunta equivalente:

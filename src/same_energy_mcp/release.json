@@ -1,0 +1,10 @@
+{
+  "version": "0.4.0",
+  "changes": [
+    "Consulta inicial ao GitHub para verificar se existe uma versão mais recente.",
+    "Pergunta de atualização: Tem atualização, posso instalar? A instalação exige concordância explícita.",
+    "Atualizador local vinculado ao commit apresentado, com teste da nova versão antes de alterar a instalação.",
+    "Preservação do .env e das preferências no volume Docker durante a atualização.",
+    "Consulta às mudanças da versão disponível e registro persistente da última atualização concluída."
+  ]
+}

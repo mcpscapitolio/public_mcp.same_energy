@@ -19,8 +19,12 @@ USER mcp
 CMD ["same-energy-mcp"]
 
 FROM runtime AS test
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
 COPY scripts/ /scripts/
 COPY tests/ /tests/
+USER mcp
 RUN python -m unittest discover -s /tests -v
 
 FROM runtime AS production

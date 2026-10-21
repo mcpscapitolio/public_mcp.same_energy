@@ -3,7 +3,7 @@ set -euo pipefail
 repo_dir="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 client="${1:-}"
 docker_bin="$(command -v docker)"
-unset SAME_ENERGY_WORKSPACE_DIR
+unset SAME_ENERGY_WORKSPACE_DIR SAME_ENERGY_INSTALL_DIRECTORY
 compose() { "$docker_bin" compose --project-directory "$repo_dir" --env-file "$repo_dir/.env" "$@"; }
 
 case "$client" in
