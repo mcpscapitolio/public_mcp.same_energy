@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "same-energy-public": {
+      "command": "docker",
+      "args": ["compose", "--project-directory", "/CAMINHO/ABSOLUTO/public_mcp.same_energy", "exec", "-T", "same-energy", "same-energy-mcp"]
+    }
+  }
+}

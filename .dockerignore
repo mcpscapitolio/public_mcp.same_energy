@@ -1,0 +1,14 @@
+**
+!Dockerfile
+!pyproject.toml
+!src/
+!src/**
+!tests/
+!tests/**
+**/__pycache__/
+**/*.pyc
+!scripts/
+!scripts/*.py
+!scripts/*.sh
+!README.md
+!LICENSE

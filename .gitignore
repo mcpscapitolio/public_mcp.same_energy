@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+workspace/
+.sessions/
+*.cookies*
+playwright-report/
+test-results/
+.DS_Store
+mcp.public.local.json
+output_*/

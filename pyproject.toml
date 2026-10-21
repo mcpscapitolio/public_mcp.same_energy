@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=75,<83"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "same-energy-mcp"
+version = "0.3.0"
+description = "Same Energy visual search and verified image downloads over MCP"
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["mcp==1.30.0", "playwright==1.64.0", "Pillow==12.3.0", "httpx==0.28.1"]
+
+[project.scripts]
+same-energy-mcp = "same_energy_mcp.server:main"
+
+[project.urls]
+Repository = "https://github.com/mcpscapitolio/public_mcp.same_energy"
+Documentation = "https://github.com/mcpscapitolio/public_mcp.same_energy/blob/main/AJUDA_INSTALACAO.md"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+same_energy_mcp = ["preferences.json", "help.md"]

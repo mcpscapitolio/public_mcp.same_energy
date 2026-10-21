@@ -1,0 +1,25 @@
+name: same-energy-public-mcp
+services:
+  same-energy:
+    build: .
+    image: same-energy-public-mcp:local
+    init: true
+    restart: unless-stopped
+    shm_size: 1gb
+    command: [sleep, infinity]
+    environment:
+      SAME_ENERGY_WORKSPACE: /workspace
+      SAME_ENERGY_HOST_WORKSPACE: ${SAME_ENERGY_WORKSPACE_DIR:?Preencha SAME_ENERGY_WORKSPACE_DIR no .env}
+      SAME_ENERGY_PREFERENCES_FILE: /data/preferences.json
+    volumes:
+      - type: bind
+        source: ${SAME_ENERGY_WORKSPACE_DIR:?Preencha SAME_ENERGY_WORKSPACE_DIR no .env}
+        target: /workspace
+      - same-energy-data:/data
+    healthcheck:
+      test: [CMD, python, -c, "import same_energy_mcp.server"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+volumes:
+  same-energy-data:
