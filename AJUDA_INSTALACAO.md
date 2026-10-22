@@ -52,7 +52,7 @@ O instalador:
    `--workspace` para reutilizá-lo.
 2. Executa os testes Docker, constrói a imagem e inicia o serviço isolado
    `same-energy-public-mcp`.
-3. Gera `mcp.public.local.json` com caminhos absolutos, verifica as dez ferramentas,
+3. Gera `mcp.public.local.json` com caminhos absolutos, verifica as ferramentas disponíveis,
    a ajuda e a conexão ao site. Não envia fotos nem salva fotografias nesse teste.
 4. Registra `same-energy-public` no cliente escolhido e preserva outros servidores.
    No Codex e Antigravity, salva um backup antes de alterar configuração existente.
