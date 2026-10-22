@@ -29,6 +29,11 @@ Ao receber “como funciona o mcp SAME-ENERGY?” ou uma pergunta equivalente:
    informou. O MCP cria `output_AAAA-MM-DD_nome-da-busca/`, com metadados em `json/`.
    Examine a prévia individual antes de salvar e registre `visual_review` com o
    SHA-256 retornado. A escolha da pasta vale para as imagens da mesma busca.
+   Ao terminar, entregue e abra o link do catálogo gerado. Todas as fotos ficam
+   na mesma página: marque, confira “Visualizar apenas marcadas” e use o botão
+   fixo “Mover seleção”. As fotos vão para `selecionadas/`, dentro da busca, e
+   aparecem somente na aba Selecionadas. A grade principal permite acrescentar
+   outras depois. Os JSONs ficam em `json/` e o Docker deve continuar ligado.
 5. Dê um exemplo de pedido completo:
    “Busque fotografias grandes de ruas chuvosas à noite e salve as escolhidas em
    [minha pasta de referências].” O trecho entre colchetes deve ser substituído

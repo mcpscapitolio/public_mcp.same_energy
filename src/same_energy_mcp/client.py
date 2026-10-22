@@ -18,6 +18,7 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 from playwright.async_api import Error as PlaywrightError
 
 from .preferences import is_large, load_preferences, output_folder_name
+from .catalog import CatalogStore, CatalogError
 
 BASE = "https://same.energy"
 MAX_BYTES = 32 * 1024 * 1024
@@ -384,6 +385,20 @@ class SameEnergy:
         result["saved"] = True
         result["host_path"] = self.workspace.host_path(Path(result["path"]))
         result["host_metadata_path"] = self.workspace.host_path(Path(result["metadata_path"]))
+        if self.preferences.get("catalog_after_save", True):
+            try:
+                result["catalog"] = self.create_catalog(str(directory), name)
+            except (CatalogError, OSError, ValueError) as exc:
+                # A catalog problem must never misreport a completed image save as failed.
+                result["catalog_error"] = str(exc)
+                result["catalog_instruction"] = "A imagem foi salva. Corrija o catálogo e use same_energy_create_catalog na pasta da busca."
+        return result
+
+    def create_catalog(self, directory, title=None):
+        path = self.workspace.resolve(directory)
+        result = CatalogStore().register(path, title)
+        result["host_path"] = self.workspace.host_path(Path(result["path"]))
+        result["host_selected_directory"] = self.workspace.host_path(Path(result["selected_directory"]))
         return result
 
     async def contact_sheet(self, results):

@@ -13,6 +13,7 @@ dependencies = ["mcp==1.30.0", "playwright==1.64.0", "Pillow==12.3.0", "httpx==0
 
 [project.scripts]
 same-energy-mcp = "same_energy_mcp.server:main"
+same-energy-catalog = "same_energy_mcp.catalog:main"
 
 [project.urls]
 Repository = "https://github.com/mcpscapitolio/public_mcp.same_energy"
@@ -22,7 +23,7 @@ Documentation = "https://github.com/mcpscapitolio/public_mcp.same_energy/blob/ma
 where = ["src"]
 
 [tool.setuptools.package-data]
-same_energy_mcp = ["preferences.json", "help.md", "release.json"]
+same_energy_mcp = ["preferences.json", "help.md", "release.json", "catalog.html"]
 
 [tool.setuptools.dynamic]
 version = {attr = "same_energy_mcp.__version__"}

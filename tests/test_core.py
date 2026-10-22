@@ -112,7 +112,7 @@ class ValidationTests(unittest.TestCase):
             prefs.update(schema_version=1, minimum_long_edge=1920, metadata_subdirectory="metadados")
             path.write_text(json.dumps(prefs))
             migrated = load_preferences()
-            self.assertEqual(migrated["schema_version"], 2)
+            self.assertEqual(migrated["schema_version"], 3)
             self.assertTrue(migrated["photographs_only"])
             self.assertTrue(migrated["reject_markings"])
             self.assertTrue(migrated["reject_clearly_ai_generated"])
@@ -142,7 +142,8 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
                 }, 700);
             };</script>"""
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
-            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": ""
+            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": "",
+            "SAME_ENERGY_CATALOG_REGISTRY": str(Path(tmp) / "internal/catalogs.json")
         }):
             photo = Path(tmp) / "input.jpg"
             photo.write_bytes(jpeg())
@@ -200,7 +201,7 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
     async def test_tool_schema_and_annotations(self):
         from same_energy_mcp.server import mcp
         tools = {t.name: t for t in await mcp.list_tools()}
-        self.assertEqual(len(tools), 10)
+        self.assertEqual(len(tools), 11)
         self.assertFalse(tools["same_energy_search_by_image"].annotations.readOnlyHint)
         self.assertFalse(tools["same_energy_save_image"].annotations.destructiveHint)
         limit = tools["same_energy_get_gallery"].inputSchema["properties"]["limit"]
@@ -212,7 +213,8 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_missing_destination_asks_user_without_network_or_files(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
-            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": ""
+            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": "",
+            "SAME_ENERGY_CATALOG_REGISTRY": str(Path(tmp) / "internal/catalogs.json")
         }):
             c = SameEnergy()
             c.detail = AsyncMock()
@@ -228,7 +230,8 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_confirmed_destination_creates_search_folder_and_json_subfolder(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
-            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": ""
+            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": "",
+            "SAME_ENERGY_CATALOG_REGISTRY": str(Path(tmp) / "internal/catalogs.json")
         }):
             c = SameEnergy()
             c.detail = AsyncMock(return_value={"asset": {"url": "https://blobcdn.same.energy/a/test"}})
@@ -240,6 +243,7 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
                                       visual_review=approved_review(jpeg()))
                 directory = Path(tmp) / output_folder_name("rua noturna", c.preferences)
                 self.assertTrue(result["saved"])
+                self.assertTrue(Path(result["catalog"]["path"]).exists())
                 self.assertEqual(Path(result["path"]).parent, directory)
                 self.assertEqual(Path(result["metadata_path"]).parent, directory / "json")
                 self.assertEqual(Path(result["path"]).read_bytes(), jpeg())
@@ -252,7 +256,8 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_non_photographs_markings_ai_and_uncertain_reviews_are_rejected(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
-            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": ""
+            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": "",
+            "SAME_ENERGY_CATALOG_REGISTRY": str(Path(tmp) / "internal/catalogs.json")
         }):
             c = SameEnergy()
             c.detail = AsyncMock()
@@ -271,7 +276,8 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_save_requires_review_and_matching_preview_of_this_image(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
-            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": ""
+            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": "",
+            "SAME_ENERGY_CATALOG_REGISTRY": str(Path(tmp) / "internal/catalogs.json")
         }):
             c = SameEnergy()
             c.detail = AsyncMock()
@@ -294,7 +300,8 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_changed_image_invalidates_review_and_saves_nothing(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
-            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": ""
+            "SAME_ENERGY_WORKSPACE": tmp, "SAME_ENERGY_HOST_WORKSPACE": "",
+            "SAME_ENERGY_CATALOG_REGISTRY": str(Path(tmp) / "internal/catalogs.json")
         }):
             c = SameEnergy()
             c.detail = AsyncMock(return_value={"asset": {"url": "https://blobcdn.same.energy/a/test"}})

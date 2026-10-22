@@ -15,7 +15,7 @@ from mcp.client.stdio import stdio_client
 async def run(args):
     report = {"tools": [], "checks": {}}
     Path(args.output).mkdir(parents=True, exist_ok=True)
-    env = {k: os.environ[k] for k in ("PYTHONPATH", "PLAYWRIGHT_BROWSERS_PATH", "SAME_ENERGY_WORKSPACE", "SAME_ENERGY_HOST_WORKSPACE", "SAME_ENERGY_PREFERENCES_FILE", "SAME_ENERGY_INSTALL_DIRECTORY") if k in os.environ}
+    env = {k: os.environ[k] for k in ("PYTHONPATH", "PLAYWRIGHT_BROWSERS_PATH", "SAME_ENERGY_WORKSPACE", "SAME_ENERGY_HOST_WORKSPACE", "SAME_ENERGY_PREFERENCES_FILE", "SAME_ENERGY_INSTALL_DIRECTORY", "SAME_ENERGY_CATALOG_PORT") if k in os.environ}
     params = StdioServerParameters(command=sys.executable, args=["-m", "same_energy_mcp.server"], env=env)
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write, read_timeout_seconds=timedelta(seconds=180)) as session:
@@ -59,6 +59,12 @@ async def run(args):
             prompt = await call("same_energy_save_image", {"image_id": "aghP"})
             assert prompt["requires_user_input"] and not prompt["saved"]
             report["destination_prompt_verified"] = True
+            catalog_directory = Path(args.output) / "output_catalog-protocol"
+            catalog_directory.mkdir(exist_ok=True)
+            catalog = await call("same_energy_create_catalog", {"search_directory": str(catalog_directory), "title": "Verificação do catálogo"})
+            assert Path(catalog["path"]).exists() and catalog["url"].startswith("http://127.0.0.1:")
+            assert not Path(catalog["selected_directory"]).exists()
+            report["catalog_protocol_verified"] = True
             if args.confirm_output:
                 review = json.loads(Path(args.visual_review_json).read_text())
                 assert review["sha256"] == preview["sha256"], "Examine a nova prévia e atualize a avaliação visual."

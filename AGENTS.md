@@ -30,3 +30,7 @@
 - Testar a candidata antes de alterar o checkout e preservar mudanças locais, .env e volumes. Não anunciar sucesso após uma falha.
 - Disponibilizar notas da versão oferecida e da última instalação concluída; manter `/data/last_update.json` persistente.
 - Incrementar `__version__` e `release.json` juntos e atualizar CHANGELOG.md em cada nova versão pública.
+- Depois de salvar, entregar e abrir o catálogo; reutilizar o modelo catalog.html em todas as buscas.
+- A grade principal lê só a raiz da busca, sem selecionadas/; a aba Selecionadas lê só essa pasta.
+- Mover somente imagens marcadas, sem sobrescrever; conservar os JSONs em json/.
+- Catálogo local só em 127.0.0.1; preservar /data/catalogs.json e não registrar seus links nos logs.

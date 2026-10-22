@@ -28,12 +28,12 @@ def load_preferences() -> dict:
             finally:
                 temporary.unlink()
         data = json.loads(path.read_text())
-        if data.get("schema_version", 1) == 1:
+        if data.get("schema_version", 1) < 3:
             # Add the newly requested rule without resetting the user's settings.
             current_defaults = json.loads(defaults)
-            for key in ("photographs_only", "reject_markings", "reject_clearly_ai_generated", "require_visual_review_before_save"):
+            for key in ("photographs_only", "reject_markings", "reject_clearly_ai_generated", "require_visual_review_before_save", "catalog_after_save"):
                 data.setdefault(key, current_defaults[key])
-            data["schema_version"] = 2
+            data["schema_version"] = 3
             with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, delete=False) as f:
                 temporary = Path(f.name)
                 json.dump(data, f, ensure_ascii=False, indent=2)

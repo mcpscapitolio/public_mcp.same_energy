@@ -144,13 +144,45 @@ envio é feito durante a explicação. Depois:
 3. Indique a pasta de destino nessa busca. O assistente examina a prévia individual
    de cada escolhida e registra a triagem antes de salvar.
 4. Encontre os arquivos em `output_AAAA-MM-DD_nome-da-busca/`, com JSONs em `json/`.
+5. Abra o catálogo entregue pelo agente ou `catalogo.html`. Marque as fotos e use
+   **Mover seleção** no rodapé fixo. A pasta `selecionadas/` é criada dentro da
+   pasta da busca; a aba **Selecionadas** mostra apenas essa pasta. A grade principal
+   continua mostrando somente as restantes, para acrescentar mais fotos depois.
+   O filtro **Visualizar apenas marcadas** ajuda a conferir antes de mover.
 
 O fuso padrão é `America/Sao_Paulo`. As preferências persistem em
 `/data/preferences.json`, no volume `same-energy-public-mcp_same-energy-data`.
 Consulte `same-energy://preferences` ou `same_energy_status` para ver os valores.
 
+## Catálogo local
+
+O serviço Docker mantém o catálogo em `http://127.0.0.1:8765`. Cada busca recebe
+um link próprio e um `catalogo.html` que abre esse link; não é necessário escolher
+a pasta novamente no navegador. Para uma busca já salva, peça ao agente
+`same_energy_create_catalog(search_directory="/workspace/output_DATA_nome")`.
+Use a pasta da busca, não a pasta base que contém várias buscas.
+
+O catálogo lê imagens diretamente da raiz da busca, sem recursão. A aba
+Selecionadas lê apenas `selecionadas/`. As marcações pendentes são guardadas no
+navegador e reconciliadas com os arquivos existentes ao atualizar. Os metadados
+originais permanecem em `json/`. Mover não reenvia imagens ao Same Energy.
+
+Somente a porta de loopback do computador é publicada; não altere o vínculo para
+uma interface pública. Se a porta estiver ocupada, coloque
+`SAME_ENERGY_CATALOG_PORT=8766` no `.env` usado pelo Docker e execute
+`docker compose up -d --force-recreate same-energy`. Peça ao agente para recriar
+os catálogos que pretende reabrir, atualizando os links para a nova porta.
+Não instale dois serviços na mesma porta. Os links incluem um identificador de
+acesso por catálogo; o serviço não lista outras pastas e não aceita caminhos livres.
+O modelo padrão fica em `src/same_energy_mcp/catalog.html` e o registro persistente
+em `/data/catalogs.json`. Não apague o volume durante atualizações.
+
 ## Problemas comuns
 
+- **Catálogo não abre:** mantenha o Docker em execução, confira a porta no `.env`
+  e use `docker compose up -d same-energy`. Reabra o link entregue pelo agente.
+- **Imagem não foi movida:** confira o aviso na página, nomes já existentes em
+  `selecionadas/` e permissões da pasta. O arquivo de origem é preservado.
 - **Docker indisponível:** inicie o Docker e confirme `docker compose version`.
 - **Cliente não vê as ferramentas:** confira os caminhos registrados e recarregue
   os servidores MCP. Use o nome `same-energy-public`.

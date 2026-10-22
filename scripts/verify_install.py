@@ -6,17 +6,19 @@ from datetime import timedelta
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from same_energy_mcp.catalog import healthcheck
 
 
 async def run():
-    env = {key: os.environ[key] for key in ("PLAYWRIGHT_BROWSERS_PATH", "SAME_ENERGY_WORKSPACE", "SAME_ENERGY_HOST_WORKSPACE", "SAME_ENERGY_PREFERENCES_FILE", "SAME_ENERGY_INSTALL_DIRECTORY") if key in os.environ}
+    healthcheck()
+    env = {key: os.environ[key] for key in ("PLAYWRIGHT_BROWSERS_PATH", "SAME_ENERGY_WORKSPACE", "SAME_ENERGY_HOST_WORKSPACE", "SAME_ENERGY_PREFERENCES_FILE", "SAME_ENERGY_INSTALL_DIRECTORY", "SAME_ENERGY_CATALOG_PORT") if key in os.environ}
     params = StdioServerParameters(command="same-energy-mcp", env=env)
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write, read_timeout_seconds=timedelta(seconds=180)) as session:
             initialized = await session.initialize()
             assert "CONSULTA INICIAL GITHUB" in initialized.instructions
             names = {tool.name for tool in (await session.list_tools()).tools}
-            assert len(names) == 10 and "same_energy_prepare_update" in names
+            assert len(names) == 11 and "same_energy_create_catalog" in names
             for name in ("same_energy_help", "same_energy_status"):
                 result = await session.call_tool(name, {})
                 assert not result.isError, name

@@ -1,5 +1,14 @@
 # Histórico de atualizações
 
+## 0.5.0
+
+- Catálogo automático em uma única página, com modelo reutilizável e visualização ampliada das fotografias.
+- Marcação de imagens e filtro Visualizar apenas marcadas, com preservação das marcações no navegador.
+- Botão fixo Mover seleção cria selecionadas/ dentro da pasta da busca e move as imagens sem sobrescrever arquivos.
+- A grade principal mostra apenas as imagens restantes; a aba Selecionadas lê somente selecionadas/.
+- Catálogo servido localmente pelo Docker, com catalogo.html para reabrir e JSONs preservados em json/.
+- Nova ferramenta same_energy_create_catalog para criar ou retomar o seletor de uma busca salva.
+
 ## 0.4.0
 
 - Consulta inicial ao GitHub para verificar se há uma versão mais recente.

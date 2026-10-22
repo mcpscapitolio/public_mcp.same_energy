@@ -6,19 +6,22 @@ services:
     init: true
     restart: unless-stopped
     shm_size: 1gb
-    command: [sleep, infinity]
+    command: [same-energy-catalog]
+    ports:
+      - "127.0.0.1:${SAME_ENERGY_CATALOG_PORT:-8765}:8765"
     environment:
       SAME_ENERGY_WORKSPACE: /workspace
       SAME_ENERGY_HOST_WORKSPACE: ${SAME_ENERGY_WORKSPACE_DIR:?Preencha SAME_ENERGY_WORKSPACE_DIR no .env}
       SAME_ENERGY_PREFERENCES_FILE: /data/preferences.json
       SAME_ENERGY_INSTALL_DIRECTORY: ${SAME_ENERGY_INSTALL_DIRECTORY:-}
+      SAME_ENERGY_CATALOG_PORT: ${SAME_ENERGY_CATALOG_PORT:-8765}
     volumes:
       - type: bind
         source: ${SAME_ENERGY_WORKSPACE_DIR:?Preencha SAME_ENERGY_WORKSPACE_DIR no .env}
         target: /workspace
       - same-energy-data:/data
     healthcheck:
-      test: [CMD, python, -c, "import same_energy_mcp.server"]
+      test: [CMD, python, -c, "from same_energy_mcp.catalog import healthcheck; healthcheck()"]
       interval: 30s
       timeout: 10s
       start_period: 10s

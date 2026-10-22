@@ -46,6 +46,10 @@ PREFERÊNCIAS PERSISTENTES DO USUÁRIO:
 4. Apenas fotografias: rejeitar marcações sobrepostas e imagens claramente geradas por IA.
    As galerias são candidatas sem triagem; inspecione-as antes de apresentar a seleção final.
    Examine a prévia individual de cada imagem antes do download; descarte casos duvidosos.
+5. Cada salvamento atualiza o catálogo reutilizável. Ao concluir, entregue o link catalog.url
+   e abra-o no navegador se possível. Use same_energy_create_catalog para retomar uma pasta.
+   A grade principal não lê selecionadas/. O botão fixo move apenas imagens marcadas;
+   a aba Selecionadas mostra essa pasta e os JSONs permanecem em json/.
 Passe destination_confirmed=true somente após a escolha explícita do usuário para esta busca.
 Não peça confirmação adicional para cada imagem da mesma busca.
 Para salvar use same_energy_save_image: baixa o arquivo maior da página de detalhes,
@@ -213,9 +217,24 @@ async def same_energy_save_image(image_id: str, ctx: Context, output_directory: 
     Exige visual_review após examinar preview_image nesta sessão: is_photograph=true,
     has_markings=false, clearly_ai_generated=false e uncertain=false; copie o sha256 da prévia.
     Não preencha a aprovação automaticamente. Rejeita resultados reprovados ou cujo arquivo mudou.
+    Atualiza catalogo.html com o modelo padrão e retorna catalog.url para o seletor local.
     """
     return await client(ctx).save(image_id, output_directory, gallery_url, search_name, destination_confirmed,
                                 visual_review.model_dump() if visual_review is not None else None)
+
+
+@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False})
+async def same_energy_create_catalog(search_directory: str, ctx: Context, title: str | None = None) -> dict:
+    """Cria ou reabre o catálogo padrão de uma pasta de busca já salva, sem nova pesquisa.
+
+    search_directory: pasta output_AAAA-MM-DD_nome-da-busca, nunca a pasta base.
+    Não move imagens nesta chamada. Retorna URL local e catalogo.html; exige Docker em execução.
+    Todas as imagens da raiz aparecem na mesma página, com marcação e filtro de marcadas.
+    O botão fixo move as marcadas para selecionadas/ sem sobrescrever arquivos.
+    A grade principal não lê selecionadas/; há uma aba separada para essa pasta.
+    Os JSONs permanecem em json/. Entregue e abra a URL ao finalizar o salvamento.
+    """
+    return client(ctx).create_catalog(search_directory, title)
 
 
 def main():

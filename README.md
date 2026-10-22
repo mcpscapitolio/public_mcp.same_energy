@@ -3,7 +3,8 @@
 Servidor MCP em Docker para encontrar referências visuais reais no
 [Same Energy](https://same.energy/) por descrição ou fotografia de referência.
 Inclui ajuda assistida, prancha de candidatas, consulta da origem e download do
-arquivo maior disponível, preservando seus bytes.
+arquivo maior disponível, preservando seus bytes. Ao salvar, cria um catálogo
+com seleção e movimentação das fotos para uma pasta `selecionadas/`.
 
 ## Instalação
 
@@ -67,6 +68,7 @@ faz pesquisas, uploads ou downloads.
 | `same_energy_get_gallery` | Retomar uma galeria sem reenviar a foto |
 | `same_energy_preview_image` | Examinar a imagem, resolução e origem |
 | `same_energy_save_image` | Salvar após escolha da pasta e triagem visual |
+| `same_energy_create_catalog` | Criar ou reabrir o seletor de uma busca salva |
 
 Os padrões persistentes aceitam somente candidatas grandes, de pelo menos
 1280 × 720 em qualquer orientação. O assistente deve selecionar apenas fotografias,
@@ -79,11 +81,37 @@ O salvamento cria `output_AAAA-MM-DD_nome-da-busca/`, com os JSONs em `json/`.
 As preferências ficam no volume Docker; caminhos pessoais e sessões não são
 incluídos na distribuição. O envio de uma foto transmite o arquivo ao Same Energy.
 
+## Catálogo com seleção
+
+Cada imagem salva atualiza `catalogo.html` na pasta da busca, usando sempre o
+mesmo modelo incluído no MCP. Ao concluir, o agente entrega o link local do
+catálogo e pode abri-lo no navegador. O Docker precisa permanecer em execução.
+Também é possível abrir `catalogo.html` ou pedir ao agente para retomar a pasta
+com `same_energy_create_catalog`.
+
+- Todas as fotos ficam na mesma página, sem paginação. Clique na imagem para ampliar.
+- Marque as fotos e use **Visualizar apenas marcadas** para conferir sua escolha.
+- O botão **Mover seleção** permanece no rodapé durante a rolagem. Ele cria
+  `selecionadas/` dentro de `output_AAAA-MM-DD_nome-da-busca/` e move os arquivos.
+- A grade principal lê apenas a raiz da busca, sem entrar em `selecionadas/`.
+  Você pode marcar mais fotos e movê-las depois. A aba **Selecionadas** mostra
+  somente a pasta `selecionadas/`, sem misturar as duas galerias.
+- Arquivos existentes não são sobrescritos. Se houver conflito, o original fica
+  onde estava e a página avisa. Os bytes das fotos são preservados e os JSONs
+  de origem continuam em `json/`, como registro do salvamento inicial.
+
+As marcações pendentes ficam neste navegador. As movimentações são reais no
+disco e aparecem também em outros navegadores. O modelo fica no pacote; o
+registro dos catálogos permanece no volume Docker para reabri-los após reinícios.
+Não publique os links locais com identificadores de acesso.
+
 ## Privacidade e manutenção
 
 As buscas públicas não exigem conta, senha, API key nem token do GitHub. O navegador
 é isolado no Docker e não usa login pessoal, cookies ou keychain do host.
-A instalação usa projeto, imagem e volume próprios, sem publicar portas de rede.
+A instalação usa projeto, imagem e volume próprios. O catálogo é acessível somente
+neste computador, em `127.0.0.1:8765`; não é publicado na rede. A porta pode ser
+alterada com `SAME_ENERGY_CATALOG_PORT` no `.env` Docker.
 
 O projeto usa a interface pública do site e pode precisar de ajustes se ela mudar.
 Não é afiliado ao Same Energy. A licença MIT cobre o código; as imagens têm suas

@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "large_images_only": true,
   "minimum_long_edge": 1280,
   "minimum_short_edge": 720,
@@ -11,5 +11,6 @@
   "photographs_only": true,
   "reject_markings": true,
   "reject_clearly_ai_generated": true,
-  "require_visual_review_before_save": true
+  "require_visual_review_before_save": true,
+  "catalog_after_save": true
 }
