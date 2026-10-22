@@ -15,3 +15,5 @@ test-results/
 .DS_Store
 mcp.public.local.json
 output_*/
+
+.same-energy-inputs/

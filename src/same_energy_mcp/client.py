@@ -19,6 +19,7 @@ from playwright.async_api import Error as PlaywrightError
 
 from .preferences import is_large, load_preferences, output_folder_name
 from .catalog import CatalogStore, CatalogError
+from .workflow import TaskStore, profile, search_plan, brief_signature, color_histogram
 
 BASE = "https://same.energy"
 MAX_BYTES = 32 * 1024 * 1024
@@ -26,13 +27,15 @@ Image.MAX_IMAGE_PIXELS = 40_000_000
 FORMATS = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp", "GIF": ".gif", "BMP": ".bmp", "AVIF": ".avif"}
 VISUAL_REVIEW_INSTRUCTIONS = (
     "O assistente deve examinar visualmente as candidatas antes de apresentar a seleção final. "
-    "Aceitar apenas fotografias; rejeitar ilustrações, pinturas, renders, capturas de interfaces, "
+    "Por padrão, aceitar apenas fotografias; rejeitar ilustrações, pinturas, renders, capturas de interfaces, "
     "marcas-d'água, assinaturas, anotações e logotipos sobrepostos, ou imagens claramente geradas por IA. "
     "Textos e placas que fazem parte da cena fotografada não são marcações sobrepostas. "
     "Descartar os casos duvidosos. Antes de salvar cada imagem, abrir preview_image e inspecionar "
     "a prévia individual; se faltar detalhe, não aprovar. Informar visual_review usando o SHA-256 "
     "da prévia examinada. A triagem é feita pelo assistente, não por um detector automático no servidor; "
-    "aparência fotográfica não comprova a origem da imagem."
+    "aparência fotográfica não comprova a origem da imagem. "
+    "Em uma tarefa guiada de Anúncios, siga a política específica: textos, marcas e ilustrações "
+    "da própria peça são permitidos; marcas externas e IA evidente continuam bloqueadas."
 )
 
 
@@ -148,6 +151,7 @@ class SameEnergy:
         self.workspace = Workspace()
         self.preferences = load_preferences()
         self.previewed_images = {}
+        self.task_results = {}
         self.lock = asyncio.Lock()
         self.pw = None
         self.browser = None
@@ -301,10 +305,13 @@ class SameEnergy:
             result["uploaded_image"] = {**measured, "host_path": self.workspace.host_path(path)}
             return result
 
-    async def get_gallery(self, url, limit):
+    async def get_gallery(self, url, limit, task_id=None):
+        if task_id:
+            self.task_profile(task_id)
         async with self.page() as page:
             await self.open(page, gallery_url(url))
-            return await self.gallery(page, limit)
+            result = await self.gallery(page, limit)
+            return self.attach_task(result, task_id) if task_id else result
 
     async def detail(self, ident):
         ident = image_id(ident)
@@ -331,7 +338,8 @@ class SameEnergy:
         return {"image_id": ident, "detail_url": page.url, "title": title, "asset": largest,
                 "source_links": sources, "license_url": next((x["url"] for x in sources if urlsplit(x["url"]).hostname in {"creativecommons.org", "www.creativecommons.org"}), None)}
 
-    async def preview(self, ident):
+    async def preview(self, ident, task_id=None):
+        policy = self.task_profile(task_id, ident) if task_id else None
         detail = await self.detail(ident)
         data = await self.fetch(detail["asset"]["url"])
         measured = inspect_image(data)
@@ -342,27 +350,33 @@ class SameEnergy:
             im.thumbnail((1000, 800))
             out = io.BytesIO()
             im.save(out, format="JPEG", quality=85)
-        self.previewed_images[image_id(ident)] = measured["sha256"]
+        self.previewed_images[(task_id + ":" if task_id else "") + image_id(ident)] = measured["sha256"]
         return {**detail, **measured, "preview_only": True, "visual_review_required": True,
-                "visual_review_instructions": VISUAL_REVIEW_INSTRUCTIONS}, out.getvalue()
+                "visual_review_instructions": policy["visual_review_instructions"] if policy else VISUAL_REVIEW_INSTRUCTIONS,
+                **({"task_id": task_id, "reference_profile": policy} if task_id else {})}, out.getvalue()
 
-    async def save(self, ident, output_directory=None, from_gallery=None, search_name=None, destination_confirmed=False, visual_review=None):
+    async def save(self, ident, output_directory=None, from_gallery=None, search_name=None, destination_confirmed=False, visual_review=None, task_id=None):
         if not output_directory or not destination_confirmed:
             return {"saved": False, "requires_user_input": True,
                     "question": "Em qual pasta devo salvar as imagens desta busca?",
                     "instruction": "Pergunte ao usuário. Use destination_confirmed=true somente após ele informar ou confirmar a pasta para esta busca.",
                     "preferences": self.preferences}
         ident = image_id(ident)
+        policy = self.task_profile(task_id, ident) if task_id else None
+        advertisement = bool(policy and policy["mode"] == "ads")
+        preview_key = (task_id + ":" if task_id else "") + ident
         if visual_review is not None and (
-            visual_review.get("is_photograph") is not True
+            (visual_review.get("is_photograph") is not True and not advertisement)
+            or (advertisement and visual_review.get("is_advertisement") is not True)
+            or (task_id and visual_review.get("matches_reference_brief") is not True)
             or visual_review.get("has_markings") is not False
             or visual_review.get("clearly_ai_generated") is not False
             or visual_review.get("uncertain") is not False
         ):
             return {"saved": False, "rejected": True,
-                    "reason": "A triagem indicou imagem não fotográfica, marcações, geração clara por IA ou dúvida. Escolha outra fotografia."}
-        if (visual_review is None or not self.previewed_images.get(ident)
-                or visual_review.get("sha256") != self.previewed_images[ident]):
+                    "reason": "A triagem não atende à modalidade escolhida, indicou marcações externas, IA evidente ou dúvida. Escolha outra referência."}
+        if (visual_review is None or not self.previewed_images.get(preview_key)
+                or visual_review.get("sha256") != self.previewed_images[preview_key]):
             return {"saved": False, "requires_visual_review": True,
                     "instruction": VISUAL_REVIEW_INSTRUCTIONS}
         parent = self.workspace.resolve(output_directory)
@@ -377,11 +391,12 @@ class SameEnergy:
         detail = await self.detail(ident)
         data = await self.fetch(detail["asset"]["url"])
         if inspect_image(data)["sha256"] != visual_review["sha256"]:
-            self.previewed_images.pop(ident, None)
+            self.previewed_images.pop(preview_key, None)
             raise SameEnergyError("O arquivo mudou após a prévia. Abra uma nova prévia e refaça a triagem visual; nada foi salvo.")
         result = save_original(data, directory, ident, {**detail, "gallery_url": from_gallery,
                                "search_name": name, "search_directory": str(directory),
-                               "visual_review": {**visual_review, "method": "assistant_visual_inspection"}}, self.preferences)
+                               "visual_review": {**visual_review, "method": "assistant_visual_inspection"},
+                               **({"task_id": task_id, "reference_profile": policy} if task_id else {})}, self.preferences)
         result["saved"] = True
         result["host_path"] = self.workspace.host_path(Path(result["path"]))
         result["host_metadata_path"] = self.workspace.host_path(Path(result["metadata_path"]))
@@ -400,6 +415,40 @@ class SameEnergy:
         result["host_path"] = self.workspace.host_path(Path(result["path"]))
         result["host_selected_directory"] = self.workspace.host_path(Path(result["selected_directory"]))
         return result
+
+    def task_profile(self, task_id, ident=None):
+        task = TaskStore().ready(task_id)
+        binding = self.task_results.get(task_id)
+        if (not binding or binding["signature"] != brief_signature(task)
+                or (ident is not None and ident not in binding["ids"])):
+            raise SameEnergyError("Execute a busca guiada nesta sessão e use uma imagem dessa tarefa; não reutilize uma triagem de outra modalidade.")
+        return profile(task)
+
+    def attach_task(self, result, task_id):
+        binding = self.task_results[task_id]
+        binding["ids"].update(row["image_id"] for row in result["results"])
+        return {**result, "task_id": task_id, "reference_profile": binding["profile"],
+                "visual_review_instructions": binding["profile"]["visual_review_instructions"]}
+
+    async def run_task(self, task_id, limit):
+        task = TaskStore().ready(task_id)
+        plan = search_plan(task)
+        if plan["method"] == "image": result = await self.search_image(plan["image_path"], limit)
+        else: result = await self.search_text(plan["query"], limit)
+        if plan.get("color_only_ranking"):
+            target = color_histogram(Path(task["image_path"]).read_bytes())
+            semaphore = asyncio.Semaphore(4)
+            async def score(row):
+                try:
+                    async with semaphore:
+                        hist = color_histogram(await self.fetch(row["thumbnail_url"], thumbnail=True))
+                    return {**row, "color_distance": round(sum(abs(a-b) for a,b in zip(target,hist)), 5)}
+                except (ValueError, OSError, httpx.HTTPError): return {**row, "color_distance": None}
+            result["results"] = sorted(await asyncio.gather(*(score(row) for row in result["results"])),
+                                       key=lambda row: row["color_distance"] if row["color_distance"] is not None else 3)
+        self.task_results[task_id] = {"signature": brief_signature(task), "ids": set(), "profile": profile(task)}
+        return {**self.attach_task(result, task_id), "search_plan": plan,
+                "reference_theme": task.get("theme", ""), "reference_description": task.get("description", "")}
 
     async def contact_sheet(self, results):
         rows = results[:12]

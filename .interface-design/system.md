@@ -17,3 +17,13 @@ Controles com área mínima 44px. Barra fixa inferior sempre visível.
 Duas abas acessíveis, filtro de marcadas e dialog nativo para ampliar.
 Botão âmbar reservado a Mover seleção; estados de erro e pasta vazia explícitos.
 Transição de pressionar 120ms; respeitar redução de movimento.
+
+## Guia de uma nova tarefa
+
+Reutilizar guide.html. Mesma mesa, tipografia, paleta e foco âmbar do catálogo.
+Uma pergunta por tela; primeira tela com três opções. Índice 01/02/03, rótulo
+serif 25px e descrição 14px por opção, sem imagens de exemplo que sugiram uma escolha.
+Opções em grid 240px mínimo, uma coluna no celular; altura mínima208/148px.
+Trilha de escolhas e botão Voltar; formulário vem somente após a modalidade.
+Resumo final e botão para copiar a continuação. Não expor comandos, IDs ou caminhos
+internos no fluxo normal; o agente usa o protocolo para acompanhar a tarefa.

@@ -18,7 +18,7 @@ async def run():
             initialized = await session.initialize()
             assert "CONSULTA INICIAL GITHUB" in initialized.instructions
             names = {tool.name for tool in (await session.list_tools()).tools}
-            assert len(names) == 11 and "same_energy_create_catalog" in names
+            assert len(names) == 14 and "same_energy_create_catalog" in names
             for name in ("same_energy_help", "same_energy_status"):
                 result = await session.call_tool(name, {})
                 assert not result.isError, name

@@ -112,7 +112,7 @@ class ValidationTests(unittest.TestCase):
             prefs.update(schema_version=1, minimum_long_edge=1920, metadata_subdirectory="metadados")
             path.write_text(json.dumps(prefs))
             migrated = load_preferences()
-            self.assertEqual(migrated["schema_version"], 3)
+            self.assertEqual(migrated["schema_version"], 4)
             self.assertTrue(migrated["photographs_only"])
             self.assertTrue(migrated["reject_markings"])
             self.assertTrue(migrated["reject_clearly_ai_generated"])
@@ -201,7 +201,7 @@ class NetworkTests(unittest.IsolatedAsyncioTestCase):
     async def test_tool_schema_and_annotations(self):
         from same_energy_mcp.server import mcp
         tools = {t.name: t for t in await mcp.list_tools()}
-        self.assertEqual(len(tools), 11)
+        self.assertEqual(len(tools), 14)
         self.assertFalse(tools["same_energy_search_by_image"].annotations.readOnlyHint)
         self.assertFalse(tools["same_energy_save_image"].annotations.destructiveHint)
         limit = tools["same_energy_get_gallery"].inputSchema["properties"]["limit"]

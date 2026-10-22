@@ -1,5 +1,6 @@
 """Reusable local contact sheet; capability URLs only expose registered search folders."""
 
+import base64
 import fcntl
 import hmac
 import io
@@ -199,20 +200,26 @@ class CatalogHandler(BaseHTTPRequestHandler):
             body = json.dumps(body, ensure_ascii=False).encode()
         if isinstance(body, str):
             body = body.encode()
-        self.send_response(status)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Referrer-Policy", "no-referrer")
-        self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'")
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Referrer-Policy", "no-referrer")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'")
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # Browser navigation may cancel a pending image or guide request.
 
     def route(self, post=False):
         host = self.headers.get("Host", "")
         if host not in {f"127.0.0.1:{self.server.public_port}", f"localhost:{self.server.public_port}"}:
             self.send(403, {"error": "Host inválido."})
+            return
+        if urlsplit(self.path).path.startswith("/guide/"):
+            self.guide_route(host, post)
             return
         if post and (self.headers.get("Origin") != f"http://{host}"
                      or self.headers.get("X-Catalog-Action") != "move"
@@ -266,6 +273,45 @@ class CatalogHandler(BaseHTTPRequestHandler):
                     self.send(200, path.read_bytes(), mime)
         except (CatalogError, ValueError, OSError, Image.DecompressionBombError):
             self.send(400, {"error": "Não foi possível concluir. Atualize o catálogo e confira os arquivos da pasta."})
+
+    def guide_route(self, host, post):
+        from .workflow import TaskStore
+        match = re.fullmatch(r"/guide/([a-f0-9]{32})/([a-f0-9]{48})/(api|choose|submit|)", urlsplit(self.path).path)
+        if not match:
+            self.send(404, {"error": "Orientação não encontrada."}); return
+        if post and (self.headers.get("Origin") != f"http://{host}"
+                     or self.headers.get("X-Guide-Action") != "edit"
+                     or self.headers.get("Content-Type", "").split(";")[0] != "application/json"):
+            self.send(403, {"error": "Abra a orientação local para continuar."}); return
+        ident, token, action = match.groups()
+        try:
+            store = TaskStore(); task = store.task(ident, token)
+            if not post:
+                if action == "":
+                    template = files("same_energy_mcp").joinpath("guide.html").read_text(encoding="utf-8")
+                    config = json.dumps({"url": f"http://{host}/guide/{ident}/{token}/"}).replace("<", "\\u003c")
+                    self.send(200, template.replace("__GUIDE_CONFIG__", config), "text/html; charset=utf-8")
+                elif action == "api": self.send(200, store.view(task))
+                else: self.send(404, {"error": "Ação indisponível."})
+                return
+            length = int(self.headers.get("Content-Length", "0"))
+            maximum = 28 * 1024 * 1024 if action == "submit" else 4096
+            if not 0 < length <= maximum: raise CatalogError("Referência muito grande.")
+            self.connection.settimeout(30)
+            data = json.loads(self.rfile.read(length))
+            if not isinstance(data, dict): raise CatalogError("Referência inválida.")
+            if action == "choose": result = store.choose(ident, data.get("choice"))
+            elif action == "submit":
+                if set(data) - {"description", "theme", "image_base64", "input_authorized"}: raise CatalogError("Entrada inválida.")
+                encoded = data.pop("image_base64", None)
+                if encoded is not None:
+                    if not isinstance(encoded, str): raise CatalogError("Foto inválida.")
+                    data["image_data"] = base64.b64decode(encoded, validate=True)
+                result = store.submit(ident, **data)
+            else: raise CatalogError("Ação indisponível.")
+            self.send(200, result)
+        except (ValueError, OSError, TypeError, Image.DecompressionBombError) as error:
+            self.send(400, {"error": str(error) if isinstance(error, CatalogError) else "Não foi possível usar esta referência. Confira o formato e tente novamente."})
 
     def do_GET(self):
         self.route()

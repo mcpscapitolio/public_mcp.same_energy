@@ -20,7 +20,7 @@ async def run(args):
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write, read_timeout_seconds=timedelta(seconds=180)) as session:
             initialized = await session.initialize()
-            assert "CONSULTA INICIAL GITHUB" in initialized.instructions
+            assert "NOVA TAREFA" in initialized.instructions
             report["tools"] = [t.name for t in (await session.list_tools()).tools]
 
             async def call(name, arguments):
@@ -32,7 +32,7 @@ async def run(args):
                 for content in result.content:
                     if content.type == "image":
                         Path(args.output, name + "-preview.jpg").write_bytes(base64.b64decode(content.data))
-                if name.startswith("same_energy_search"):
+                if name == "same_energy_run_task":
                     assert any(x.type == "image" for x in result.content), "Missing contact sheet"
                     assert all(r.get("large_image_verified") for r in data["results"])
                     assert data["visual_review_required"]
@@ -41,22 +41,38 @@ async def run(args):
 
             help_result = await call("same_energy_help", {})
             assert "Como funciona o MCP SAME-ENERGY?" in help_result["guide"]
-            await call("same_energy_check_updates", {})
-            await call("same_energy_update_notes", {})
-            plan = await call("same_energy_prepare_update", {})
-            assert not plan["ready_to_install"] and "command" not in plan
+            if "same_energy_check_updates" in report["tools"]:
+                assert "CONSULTA INICIAL GITHUB" in initialized.instructions
+                await call("same_energy_check_updates", {})
+                await call("same_energy_update_notes", {})
+                plan = await call("same_energy_prepare_update", {})
+                assert not plan["ready_to_install"] and "command" not in plan
             await call("same_energy_status", {})
-            text_search = await call("same_energy_search_by_text", {"query": "cinematic rainy street at night", "limit": 6})
-            await call("same_energy_get_gallery", {"gallery_url": text_search["gallery_url"], "limit": 8})
+            # Automated protocol fixture choices, not a selection on behalf of a real user.
+            task = await call("same_energy_start_task", {"initial_description": "cinematic rainy street at night"})
+            assert len(task["options"]) == 3 and not task["ready"]
+            task_id = task["task_id"]
+            for choice in ("reference", "text"):
+                await call("same_energy_task", {"task_id": task_id, "choice": choice})
+            ready = await call("same_energy_task", {"task_id": task_id, "description": "cinematic rainy street at night"})
+            assert ready["ready"] and ready["profile"]["mode"] == "reference"
+            text_search = await call("same_energy_run_task", {"task_id": task_id, "limit": 6})
+            await call("same_energy_get_gallery", {"gallery_url": text_search["gallery_url"], "limit": 8, "task_id": task_id})
+            report["guided_task_verified"] = True
             if args.image:
-                uploaded = await call("same_energy_search_by_image", {"image_path": args.image, "limit": 6})
-                reloaded = await call("same_energy_get_gallery", {"gallery_url": uploaded["gallery_url"], "limit": 6})
+                upload_task = await call("same_energy_start_task", {})
+                for choice in ("reference", "image"):
+                    await call("same_energy_task", {"task_id": upload_task["task_id"], "choice": choice})
+                await call("same_energy_task", {"task_id": upload_task["task_id"], "image_path": args.image, "input_authorized": True})
+                uploaded = await call("same_energy_run_task", {"task_id": upload_task["task_id"], "limit": 6})
+                reloaded = await call("same_energy_get_gallery", {"gallery_url": uploaded["gallery_url"], "limit": 6, "task_id": upload_task["task_id"]})
                 matches = {r["image_id"] for r in uploaded["results"]} & {r["image_id"] for r in reloaded["results"]}
                 assert len(matches) >= min(4, len(uploaded["results"])), "Upload returned a stale or inconsistent gallery"
                 report["upload_consistency"] = {"matching_ids_after_reload": sorted(matches), "checked": True}
-            preview = await call("same_energy_preview_image", {"image_id": "aghP"})
+            ident = text_search["results"][0]["image_id"]
+            preview = await call("same_energy_preview_image", {"image_id": ident, "task_id": task_id})
             assert preview["visual_review_required"] and len(preview["sha256"]) == 64
-            prompt = await call("same_energy_save_image", {"image_id": "aghP"})
+            prompt = await call("same_energy_save_image", {"image_id": ident, "task_id": task_id})
             assert prompt["requires_user_input"] and not prompt["saved"]
             report["destination_prompt_verified"] = True
             catalog_directory = Path(args.output) / "output_catalog-protocol"
@@ -68,7 +84,7 @@ async def run(args):
             if args.confirm_output:
                 review = json.loads(Path(args.visual_review_json).read_text())
                 assert review["sha256"] == preview["sha256"], "Examine a nova prévia e atualize a avaliação visual."
-                saved = await call("same_energy_save_image", {"image_id": "aghP", "output_directory": args.output, "gallery_url": text_search["gallery_url"], "destination_confirmed": True, "visual_review": review})
+                saved = await call("same_energy_save_image", {"image_id": ident, "task_id": task_id, "output_directory": args.output, "gallery_url": text_search["gallery_url"], "destination_confirmed": True, "visual_review": review})
                 assert saved["saved"], saved
                 from same_energy_mcp.client import inspect_image
                 measured = inspect_image(Path(saved["path"]).read_bytes())
@@ -86,7 +102,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", required=True)
     parser.add_argument("--report", required=True)
     parser.add_argument("--confirm-output", action="store_true", help="Use somente após o usuário escolher a pasta --output para esta busca; habilita o download real.")
-    parser.add_argument("--visual-review-json", help="Avaliação visual de aghP feita pelo assistente após inspeção; obrigatória para download real.")
+    parser.add_argument("--visual-review-json", help="Avaliação visual da primeira candidata da busca feita pelo assistente após inspeção; obrigatória para download real.")
     args = parser.parse_args()
     if args.confirm_output and not args.visual_review_json:
         parser.error("--confirm-output exige --visual-review-json; o teste não aprova imagens automaticamente.")

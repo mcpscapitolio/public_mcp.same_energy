@@ -1,62 +1,86 @@
 # Como funciona o MCP SAME-ENERGY?
 
-Ele conecta seu agente ao Same Energy para encontrar referências visuais reais por
-descrição ou semelhança com uma fotografia. As buscas usam o site público; não é
-preciso criar conta nem fornecer token. O MCP não gera imagens.
+O MCP ajuda a encontrar referências no Same Energy por descrição ou semelhança
+com uma foto. Ele não gera imagens. As buscas públicas não exigem conta ou token.
 
-No início da conexão, também há uma consulta ao GitHub. Se houver versão nova,
-o agente pergunta **“Tem atualização, posso instalar?”** e só instala depois da
-concordância explícita. Se esse aviso estiver pendente, priorize essa pergunta;
-depois da resposta, retome a orientação de uso sem juntar várias perguntas.
-Pergunte **“O que mudou na última atualização?”** para consultar as notas instaladas,
-ou **“O que muda nessa atualização?”** para ver as notas antes de aceitar.
+## Uma nova tarefa, uma escolha por vez
 
-## Ajuda assistida para o agente
+Ao começar uma nova tarefa, o agente chama `same_energy_start_task` e abre o link
+local. O guia apresenta três opções:
 
-Ao receber “como funciona o mcp SAME-ENERGY?” ou uma pergunta equivalente:
+1. **Imagens de referência:** o modo fotográfico atual. Somente fotografias,
+   sem vetores, ilustrações, renders, marcas sobrepostas ou IA evidente.
+2. **Referências publicitárias:** na próxima tela, escolha **Anúncios** ou
+   **Fotos publicitárias**. Em fotos publicitárias, escolha **Produtos** ou **Pessoas**.
+3. **Referências de color grading:** na próxima tela, escolha **Color exclusivamente**
+   ou **Color e temática**.
 
-1. Explique a função em linguagem simples e apresente estas opções:
-   - **Descrição:** “Busque fotografias de ruas à noite, com chuva e luzes de neon.”
-   - **Foto de referência:** “Encontre fotografias parecidas com esta imagem.”
-   - **Continuar uma busca:** “Abra novamente esta galeria do Same Energy.”
-2. Informe que o envio de uma foto transmite o arquivo ao site externo
-   `https://same.energy`. Envie somente a imagem indicada e autorizada para a busca.
-3. Explique que as candidatas aparecem em uma prancha numerada. Examine-as antes
-   de apresentar a seleção final; somente fotografias grandes, sem marcações
-   sobrepostas ou sinais claros de IA. Descarte ilustrações, renders e dúvidas.
-   Essa é uma triagem visual do assistente, não um detector automático de IA.
-4. Para baixar, pergunte **em qual pasta salvar** nessa busca, salvo se a pessoa já
-   informou. O MCP cria `output_AAAA-MM-DD_nome-da-busca/`, com metadados em `json/`.
-   Examine a prévia individual antes de salvar e registre `visual_review` com o
-   SHA-256 retornado. A escolha da pasta vale para as imagens da mesma busca.
-   Ao terminar, entregue e abra o link do catálogo gerado. Todas as fotos ficam
-   na mesma página: marque, confira “Visualizar apenas marcadas” e use o botão
-   fixo “Mover seleção”. As fotos vão para `selecionadas/`, dentro da busca, e
-   aparecem somente na aba Selecionadas. A grade principal permite acrescentar
-   outras depois. Os JSONs ficam em `json/` e o Docker deve continuar ligado.
-5. Dê um exemplo de pedido completo:
-   “Busque fotografias grandes de ruas chuvosas à noite e salve as escolhidas em
-   [minha pasta de referências].” O trecho entre colchetes deve ser substituído
-   por uma pasta absoluta que a pessoa escolher, dentro da pasta compartilhada.
-6. Termine com uma única pergunta: **“Você prefere começar por uma descrição,
-   uma foto de referência ou uma galeria existente?”** Se a pessoa já forneceu
-   essa informação, continue a partir dela sem perguntar novamente.
+Depois das escolhas, há duas entradas: **Enviar foto** ou **Enviar descrição**.
+Os botões Voltar permitem corrigir uma escolha. Uma nova tarefa começa sem herdar
+as escolhas da anterior. O agente nunca escolhe uma modalidade pelo usuário.
 
-Na explicação inicial não pesquise, não envie fotos e não baixe arquivos.
-Use `same_energy_status` quando for necessário conferir a conexão; se houver um
-problema, explique o diagnóstico e consulte o guia de instalação.
+- Em **Anúncios**, textos, logotipos e ilustrações da peça publicitária pronta são
+  permitidos. Marcas-d'água externas, IA evidente e dúvidas continuam rejeitadas.
+  Fotos publicitárias de produtos ou pessoas continuam exigindo fotografias.
+- Em **Color exclusivamente**, o assunto pode ser diferente. Se enviar foto,
+  a paleta é analisada localmente e a busca é textual por cores, com reordenação
+  aproximada por paleta. A foto não é enviada ao site nessa modalidade. Por
+  descrição, somente cores, luz e contraste entram na consulta; o tema é ignorado.
+- Em **Color e temática**, a referência deve combinar as cores e o assunto.
+  Ao usar descrição, há um campo separado para informar a temática.
 
-## Regras dos arquivos
+O formulário de foto pede autorização explícita. Nas buscas por semelhança,
+a foto indicada é enviada para `https://same.energy` quando o agente executa
+a busca. Até concluir o guia, nenhuma busca nem envio ao site é feito. O
+formulário guarda uma cópia local da entrada para o agente; não altera o original.
+Use JPEG, PNG, GIF ou BMP de até 20 MiB. Referências locais ficam na pasta
+`.same-energy-inputs/` da área compartilhada; só os arquivos escolhidos são lidos.
 
-- Resolução mínima: 1280 × 720 pixels, em qualquer orientação, conferida antes
-  de incluir a candidata e novamente no download.
-- Placas e textos da própria cena são permitidos; marcas-d'água, assinaturas,
-  anotações e logotipos sobrepostos são rejeitados.
-- A prévia serve para examinar. O download preserva os bytes do arquivo maior
-  exposto na página, sem ampliar, recomprimir ou sobrescrever arquivos.
-- O JSON registra origem, resolução, tamanho, hash e triagem. A licença de uso
-  depende da fonte; a aparência de uma fotografia não comprova sua origem.
-- As preferências persistem no volume Docker. Não apague o volume ao atualizar.
+Ao concluir, volte à conversa. O agente acompanha a tarefa com `same_energy_task`
+e pesquisa com `same_energy_run_task`. O botão Copiar pedido ajuda a retomar
+se o agente estiver aguardando uma mensagem. Se o cliente não puder abrir o
+navegador, apresente as mesmas opções na conversa, uma etapa por vez, e registre
+cada escolha humana com `same_energy_task`. Nenhuma entrada deve ser presumida.
 
-Instalação e solução de problemas:
+## Seleção e arquivos
+
+O agente examina as candidatas e a prévia individual de cada referência antes de
+salvar, seguindo a modalidade escolhida. Isso é triagem visual do assistente,
+não um detector automático de IA ou uma classificação automática de publicidade.
+Ele descarta dúvidas e registra `visual_review` com o SHA-256 da prévia examinada.
+Em tarefas guiadas, `matches_reference_brief` deve confirmar a adequação visual.
+Em Anúncios, `is_advertisement` confirma que se trata de uma peça pronta; não
+invente aprovação. O `task_id` acompanha busca, galeria, prévia e salvamento.
+
+Antes de baixar, pergunte **em qual pasta salvar** nesta busca, salvo se a pessoa
+já informou. O MCP cria `output_AAAA-MM-DD_nome-da-busca/`, com os JSONs em `json/`.
+As imagens devem ter no mínimo 1280 × 720, em qualquer orientação. O download
+preserva os bytes do arquivo maior exposto na página, sem ampliar ou recomprimir.
+Origem, licença, dimensões, hash, triagem e modalidade ficam nos metadados.
+A licença depende da fonte; aparência fotográfica não comprova a origem.
+
+Ao terminar, abra e entregue o catálogo. Todas as imagens ficam na mesma página:
+marque, confira **Visualizar apenas marcadas** e use **Mover seleção** no rodapé
+fixo. As imagens vão para `selecionadas/`, dentro da busca, e aparecem somente
+na aba Selecionadas. A grade principal permite acrescentar outras depois.
+Os JSONs continuam em `json/`. O Docker precisa continuar em execução.
+
+## Orientação para o agente
+
+Na explicação inicial, apresente as três modalidades e um exemplo de cada uma.
+Não pesquise nem envie fotos durante a explicação. Quando a pessoa quiser começar,
+use o seletor. Nunca pule as opções por ela ter enviado uma descrição ou foto:
+preserve a descrição inicial e aguarde a modalidade e a forma de entrada.
+
+Exemplos: “Busque fotografias de ruas chuvosas”; “Quero anúncios de perfumes”;
+“Preciso de referências de color com sombras azuis e luzes quentes”. Não trate
+esses exemplos como uma escolha humana para a tarefa atual.
+
+As preferências, os briefs e o registro dos catálogos persistem no Docker.
+Não apague o volume ao atualizar. Na distribuição pública, a conexão inicial
+consulta o GitHub e, se houver novidade, o agente pergunta exatamente
+**“Tem atualização, posso instalar?”**. Só instala após concordância explícita.
+**“O que mudou na última atualização?”** consulta as notas instaladas.
+
+Guia de instalação pública:
 https://github.com/mcpscapitolio/public_mcp.same_energy/blob/main/AJUDA_INSTALACAO.md

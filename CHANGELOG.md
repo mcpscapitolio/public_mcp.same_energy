@@ -1,5 +1,15 @@
 # Histórico de atualizações
 
+## 0.6.0
+
+- Nova tarefa com seletor de três modalidades: imagens de referência, referências publicitárias e color grading.
+- Publicidade com Anúncios ou Fotos publicitárias, divididas em Produtos e Pessoas.
+- Color grading com Color exclusivamente ou Color e temática; entrada por foto ou descrição após as escolhas.
+- Guia local com telas, botão Voltar e autorização explícita para usar a foto; briefs persistentes no Docker.
+- Buscas e triagem vinculadas à modalidade; anúncios permitem textos e identidade da própria peça, mantendo rejeição de marcas externas e IA evidente.
+- Color exclusivamente por foto analisa a paleta localmente, sem enviar a foto, e ordena candidatas por cor; por descrição remove a temática da consulta.
+- Fluxo alternativo na conversa para clientes sem navegador, com as mesmas escolhas humanas e ajuda assistida atualizada.
+
 ## 0.5.0
 
 - Catálogo automático em uma única página, com modelo reutilizável e visualização ampliada das fotografias.

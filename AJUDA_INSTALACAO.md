@@ -134,21 +134,39 @@ Pergunte exatamente isso ao agente. Ele deve chamar `same_energy_help` e seguir
 a orientação empacotada em [help.md](src/same_energy_mcp/help.md). A ajuda também
 está no recurso `same-energy://help` e no prompt `como_funciona_same_energy`.
 
-O fluxo assistido explica o propósito, oferece busca por descrição, por foto ou
-por galeria existente e pergunta como você quer começar. Nenhuma pesquisa ou
-envio é feito durante a explicação. Depois:
+O fluxo assistido começa com `same_energy_start_task` e abre um guia local no
+mesmo serviço do catálogo. A primeira tela oferece Imagens de referência,
+Referências publicitárias ou Referências de color grading. Publicidade se divide
+em Anúncios ou Fotos publicitárias → Produtos/Pessoas; color se divide em Color
+exclusivamente ou Color e temática. Depois, escolha Enviar foto ou Enviar descrição.
 
-1. Informe uma descrição ou indique uma fotografia autorizada para enviar ao site.
-2. O assistente examina as candidatas e apresenta uma seleção de fotografias
-   grandes, sem marcações sobrepostas ou sinais claros de IA.
-3. Indique a pasta de destino nessa busca. O assistente examina a prévia individual
-   de cada escolhida e registra a triagem antes de salvar.
-4. Encontre os arquivos em `output_AAAA-MM-DD_nome-da-busca/`, com JSONs em `json/`.
-5. Abra o catálogo entregue pelo agente ou `catalogo.html`. Marque as fotos e use
-   **Mover seleção** no rodapé fixo. A pasta `selecionadas/` é criada dentro da
-   pasta da busca; a aba **Selecionadas** mostra apenas essa pasta. A grade principal
-   continua mostrando somente as restantes, para acrescentar mais fotos depois.
-   O filtro **Visualizar apenas marcadas** ajuda a conferir antes de mover.
+O agente acompanha `same_energy_task(task_id, wait_seconds=45)` enquanto você
+preenche o guia e só chama `same_energy_run_task` quando `ready=true`. O botão
+Copiar pedido permite retomar pela conversa. Se não houver navegador, o agente
+apresenta as opções de cada etapa e registra a escolha com `same_energy_task`.
+Não pode selecionar uma modalidade automaticamente ou executar uma busca antes
+de concluir o guia. As ferramentas antigas de nova busca abrem esse seletor.
+
+A foto precisa ser indicada e autorizada; no navegador há uma caixa de autorização.
+O original é preservado. O guia só guarda uma cópia local; o envio ao Same Energy
+ocorre ao executar uma busca por semelhança. Color exclusivamente usa a foto
+localmente para extrair a paleta e pesquisar cores sem enviar a imagem ao site.
+Por descrição, a consulta desse modo retém somente atributos de cor e luz.
+Em Color e temática, a descrição das cores e a temática têm campos separados.
+
+A escolha segue em `task_id` nas ferramentas de galeria, prévia e salvamento.
+O agente deve inspecionar as imagens: em Anúncios, `is_advertisement=true` confirma
+uma peça pronta, com textos e identidade próprios permitidos; `has_markings`
+continua reprovando marcas-d'água externas. Nos demais modos, `is_photograph=true`
+continua obrigatório. Tarefas guiadas exigem `matches_reference_brief=true`
+baseado na prévia. IA evidente, marcas externas e dúvidas são sempre rejeitadas.
+Essa triagem não é uma classificação automática do servidor.
+
+Antes de salvar, escolha a pasta desta busca. O MCP cria a subpasta output por
+busca e o catálogo com filtro de marcadas, botão fixo Mover seleção e aba
+Selecionadas. JSONs ficam em json/, como antes. Não apague `/data/tasks.json`,
+preferências nem o registro de catálogos durante uma atualização. Entradas locais
+ficam em `.same-energy-inputs/` na pasta compartilhada e não entram no Git ou build.
 
 O fuso padrão é `America/Sao_Paulo`. As preferências persistem em
 `/data/preferences.json`, no volume `same-energy-public-mcp_same-energy-data`.

@@ -23,7 +23,7 @@ Documentation = "https://github.com/mcpscapitolio/public_mcp.same_energy/blob/ma
 where = ["src"]
 
 [tool.setuptools.package-data]
-same_energy_mcp = ["preferences.json", "help.md", "release.json", "catalog.html"]
+same_energy_mcp = ["preferences.json", "help.md", "release.json", "catalog.html", "guide.html"]
 
 [tool.setuptools.dynamic]
 version = {attr = "same_energy_mcp.__version__"}

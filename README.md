@@ -51,14 +51,45 @@ No seu agente, pergunte:
 
 O MCP oferece `same_energy_help`, o recurso `same-energy://help` e o prompt
 `como_funciona_same_energy`. O agente explica as opções e ajuda a escolher entre
-uma descrição, foto de referência ou galeria existente. A explicação inicial não
+a modalidade, seguida de foto ou descrição. Galerias existentes também podem ser
+retomadas. A explicação inicial não
 faz pesquisas, uploads ou downloads.
+
+## Nova tarefa guiada
+
+Toda nova tarefa abre um seletor, uma escolha por tela:
+
+| Entrada | Próxima escolha | Detalhe |
+|---|---|---|
+| Imagens de referência | Enviar foto ou descrição | Somente fotografias; sem vetores, ilustrações ou IA evidente |
+| Referências publicitárias | Anúncios ou Fotos publicitárias | Fotos se dividem em Produtos ou Pessoas |
+| Referências de color grading | Color exclusivamente ou Color e temática | Compara somente a paleta ou também o assunto |
+
+Após a modalidade, escolha **Enviar foto** ou **Enviar descrição**. O guia tem
+Voltar e acompanha o mesmo estilo do catálogo. O agente aguarda a conclusão antes
+de pesquisar. Em Anúncios, textos e identidade da peça pronta são permitidos;
+marcas-d'água externas e IA evidente são rejeitadas em todos os modos. Os demais
+modos continuam aceitando apenas fotografias.
+
+Em Color exclusivamente por foto, a paleta é extraída localmente: a foto não é
+enviada ao site; a pesquisa usa termos de cor e reordenação aproximada por paleta.
+Por descrição, só atributos de cor e luz entram na consulta. Color e temática
+considera também o assunto. A adequação final é verificada visualmente pelo agente.
+
+O agente inicia com `same_energy_start_task`, acompanha com `same_energy_task` e
+executa `same_energy_run_task` somente quando `ready=true`. Se não houver navegador,
+pode apresentar as mesmas escolhas na conversa. Foto exige autorização explícita;
+o arquivo original é preservado. Briefs ficam em `/data/tasks.json` e cópias das
+entradas autorizadas em `.same-energy-inputs/` dentro da área compartilhada.
 
 ## O que está incluído
 
 | Ferramenta | Uso |
 |---|---|
 | `same_energy_help` | Orientação assistida e exemplos |
+| `same_energy_start_task` | Abrir o seletor de uma nova tarefa |
+| `same_energy_task` | Acompanhar o guia ou registrar escolhas humanas na conversa |
+| `same_energy_run_task` | Executar a busca após concluir o guia |
 | `same_energy_check_updates` | Consultar se há versão nova no GitHub |
 | `same_energy_prepare_update` | Preparar a instalação após concordância explícita |
 | `same_energy_update_notes` | Ver mudanças da versão disponível ou da última instalada |
@@ -71,8 +102,9 @@ faz pesquisas, uploads ou downloads.
 | `same_energy_create_catalog` | Criar ou reabrir o seletor de uma busca salva |
 
 Os padrões persistentes aceitam somente candidatas grandes, de pelo menos
-1280 × 720 em qualquer orientação. O assistente deve selecionar apenas fotografias,
+1280 × 720 em qualquer orientação. Nos modos fotográficos, o assistente deve selecionar apenas fotografias,
 rejeitando marcações sobrepostas, ilustrações, renders, sinais claros de IA e dúvidas.
+Anúncios permite o layout publicitário pronto e seus textos e identidade visual.
 O servidor exige a avaliação visual da prévia individual antes do download; não
 contém um detector automático de IA. Aparência fotográfica não comprova a origem.
 

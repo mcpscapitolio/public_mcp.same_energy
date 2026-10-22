@@ -112,7 +112,7 @@ class CatalogTests(CatalogFixture):
         old.pop('catalog_after_save')
         self.store.registry.with_name('preferences.json').write_text(json.dumps(old))
         prefs = load_preferences()
-        self.assertEqual(prefs['schema_version'], 3)
+        self.assertEqual(prefs['schema_version'], 4)
         self.assertTrue(prefs['catalog_after_save'])
         self.assertEqual(prefs['minimum_long_edge'], 1920)
 
